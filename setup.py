@@ -46,6 +46,8 @@ setup(
     data_files=data_files,
     install_requires=[
         "jupyterlab~=3.0"
+        "asyncio~=3.4.3"
+        "websockets~=10.3"
     ],
     platforms="Linux, Mac OS X, Windows",
     keywords=["Jupyter", "JupyterLab", "JupyterLab3"],

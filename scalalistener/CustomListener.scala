@@ -18,6 +18,9 @@ import org.apache.log4j.Logger
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import java.util.{TimerTask,Timer}
 
+import org.java_websocket.client.WebSocketClient; 
+import org.java_websocket.handshake.ServerHandshake; 
+
 /**
  * A SparkListener Implementation that forwards data to a Jupyter Kernel
  *
@@ -36,22 +39,29 @@ class JupyterSparkMonitorListener(conf: SparkConf) extends SparkListener {
   val logger = Logger.getLogger(this.getClass.getName)
   logger.info("Started SparkListener for Jupyter Notebook")
   val port = scala.util.Properties.envOrElse("SPARKMONITOR_KERNEL_PORT", "ERRORNOTFOUND")
+  val host = scala.util.Properties.envOrElse("SPARKMONITOR_KERNEL_HOST", "ERRORNOTFOUND")
+  var mWebSocketClient:WebSocketClient = _;
+    
   logger.info("Port obtained from environment: " + port)
+  logger.info("Host obtained from environment: " + host)
   var socket: Socket = null
   var onStageStatusActiveTask: TimerTask = null
   val sparkTasksQueue: BlockingQueue[String] = new LinkedBlockingQueue[String]()
-  var out: OutputStreamWriter = null
+//   var out: OutputStreamWriter = null
   val sparkStageActiveTasksMaxMessages: Integer = 250
   val sparkStageActiveRate: Long = 1000L // 1s
 
   logger.info("Starting Connection")
   startConnection()
+  ConnectToWebSocket() 
 
   /** Send a string message to the kernel using the socket. */
   def send(msg: String): Unit = {
     try {
-      out.write(msg + ";EOD:")
-      out.flush()
+        mWebSocketClient.send(msg + ";EOD:");
+//       out.write(msg + ";EOD:")
+//       out.flush()
+        
     } catch {
       case exception: Throwable => logger.error("Exception sending socket message: ", exception)
     }
@@ -60,8 +70,8 @@ class JupyterSparkMonitorListener(conf: SparkConf) extends SparkListener {
   /** Start the socket connection to the kernel and start the send task. The kernel is the server already waiting for connections.*/
   def startConnection(): Unit = {
     try {
-      socket = new Socket("localhost", port.toInt)
-      out = new OutputStreamWriter(socket.getOutputStream())
+//       socket = new Socket("localhost", port.toInt)
+//       out = new OutputStreamWriter(socket.getOutputStream())
 
       val t = new Timer()
 
@@ -81,11 +91,39 @@ class JupyterSparkMonitorListener(conf: SparkConf) extends SparkListener {
   /** Close the socket connection to the kernel.*/
   def closeConnection(): Unit = {
     logger.info("Closing Connection")
-    out.close()
-    socket.close()
+    mWebSocketClient.close()
+//     out.close()
+//     socket.close()
     onStageStatusActiveTask.cancel()
   }
+  // websocket connection added - 220831
+  def ConnectToWebSocket() : Unit = {
+    println("Connecting to server");
+    var uri: URI = new URI("ws://"+host+":"+port.toInt); 
 
+    mWebSocketClient = new WebSocketClient(uri) {
+        @Override
+        def onOpen(serverHandshake: ServerHandshake) {
+             println("Websocket", "Opened"); 
+        }
+
+        @Override
+        def onMessage(s: String) {
+            println("onMessage", s);
+        }
+
+        @Override
+        def onClose(i:Int, s:String, b:Boolean) {
+            println("Websocket", "Closed " + s);
+        }
+
+        @Override
+        def onError(e:Exception) {
+            println("Websocket", "Error " + e.getMessage());
+        }
+    };
+    mWebSocketClient.connect();
+  }
   type JobId = Int
   type JobGroupId = String
   type StageId = Int

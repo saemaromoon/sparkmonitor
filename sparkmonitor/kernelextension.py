@@ -32,6 +32,8 @@ except ImportError:
     except Exception:
         spark_imported = False
 
+import asyncio 
+import websockets
 
 class ScalaMonitor:
     """Main singleton object for the kernel extension"""
@@ -45,7 +47,7 @@ class ScalaMonitor:
 
     def start(self):
         """Creates the socket thread and returns assigned port"""
-        self.scalaSocket = SocketThread()
+        self.scalaSocket = SocketThread(asyncio.get_event_loop())
         return self.scalaSocket.startSocket()  # returns the port
 
     def getPort(self):
@@ -82,22 +84,44 @@ class ScalaMonitor:
 
 class SocketThread(Thread):
     """Class to manage a socket in a background thread
-    to talk to the scala listener."""
+    to talk to the scala listener.""" 
+    
+    async def handler(self, websocket, path):    
+        data = await websocket.recv() 
+        reply = f"Data recieved as:  {data}!" 
+        print(reply)
+        if not data:
+            logger.info('Scala socket closed - empty data')
+            logger.info('Socket Exiting Client Loop')
+            try:
+                asyncio.get_event_loop().stop()
+            except OSError:
+                asyncio.get_event_loop().close()
+        pieces = data.split(';EOD:')
+        data = pieces[-1]
+        messages = pieces[:-1]
+        for msg in messages:
+            logger.debug('Message Received: \n%s\n', msg)
+            self.onrecv(msg)     
 
-    def __init__(self):
+    def __init__(self, event_loop):
         """Constructor, initializes base class Thread."""
-        self.port = 0
+        self.port = 25003
+        self.event_loop = event_loop
         Thread.__init__(self)
 
     def startSocket(self):
         """Starts a socket on a random port and starts
         listening for connections"""
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind(('localhost', self.port))
-        self.sock.listen(5)
-        self.port = self.sock.getsockname()[1]
-        logger.info('Socket Listening on port %s', str(self.port))
-        self.start()
+#         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#         self.sock.bind(('localhost', self.port))
+#         self.sock.listen(5)
+#         self.port = self.sock.getsockname()[1]
+#         logger.info('Socket Listening on port %s', str(self.port))
+#         self.start() 
+        self.start_server = websockets.serve(self.handler, "0.0.0.0", self.port)
+        self.start() 
+
         return self.port
 
     def run(self):
@@ -105,30 +129,32 @@ class SocketThread(Thread):
 
         Creates a socket and waits(blocking) for connections
         When a connection is closed, goes back into waiting.
-        """
-        while(True):
-            logger.info('Starting socket thread, going to accept')
-            (client, addr) = self.sock.accept()
-            logger.info('Client Connected %s', addr)
-            totalMessage = ''
-            while True:
-                messagePart = client.recv(4096)
-                if not messagePart:
-                    logger.info('Scala socket closed - empty data')
-                    break
-                totalMessage += messagePart.decode()
-                # Messages are ended with ;EOD:
-                pieces = totalMessage.split(';EOD:')
-                totalMessage = pieces[-1]
-                messages = pieces[:-1]
-                for msg in messages:
-                    logger.debug('Message Received: \n%s\n', msg)
-                    self.onrecv(msg)
-            logger.info('Socket Exiting Client Loop')
-            try:
-                client.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                client.close()
+        """ 
+        asyncio.get_event_loop().run_until_complete(self.start_server) 
+        asyncio.get_event_loop().run_forever() 
+#         while(True):
+#             logger.info('Starting socket thread, going to accept')
+#             (client, addr) = self.sock.accept()
+#             logger.info('Client Connected %s', addr)
+#             totalMessage = ''
+#             while True:
+#                 messagePart = client.recv(4096)
+#                 if not messagePart:
+#                     logger.info('Scala socket closed - empty data')
+#                     break
+#                 totalMessage += messagePart.decode()
+#                 # Messages are ended with ;EOD:
+#                 pieces = totalMessage.split(';EOD:')
+#                 totalMessage = pieces[-1]
+#                 messages = pieces[:-1]
+#                 for msg in messages:
+#                     logger.debug('Message Received: \n%s\n', msg)
+#                     self.onrecv(msg)
+#             logger.info('Socket Exiting Client Loop')
+#             try:
+#                 client.shutdown(socket.SHUT_RDWR)
+#             except OSError:
+#                 client.close()
 
     def start(self):
         """Starts the socket thread"""

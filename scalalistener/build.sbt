@@ -23,7 +23,8 @@ libraryDependencies ++= {
       "net.sf.py4j" % "py4j" % "0.10.7" % "provided",
       "log4j" % "log4j" % "1.2.17" % "provided",
       "org.json4s" % "json4s-ast_2.12" % "3.7.0-M5",
-      ("org.json4s" % "json4s-jackson_2.12" % "3.7.0-M5").exclude("com.fasterxml.jackson.core" , "jackson-databind"),
+      "org.json4s" % "json4s-jackson_2.12" % "3.7.0-M5",
+      "org.java-websocket" % "Java-WebSocket" % "1.5.1" 
     )
   }
 }
