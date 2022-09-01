@@ -35,7 +35,8 @@ ThisBuild / assemblyShadeRules := {
       ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll
     )
     case Some((2, 12)) => List(
-      ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll
+      ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll,
+      ShadeRule.rename("org.java-websocket.**" -> "ch.cern.swan.org.java-websocket.@1").inAll
     )
   }
 }
@@ -55,6 +56,7 @@ assembly / assemblyOutputPath := {
 }
 
 ThisBuild / assemblyShadeRules := Seq(
-  ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll
+  ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll,
+  ShadeRule.rename("org.java-websocket.**" -> "ch.cern.swan.org.java-websocket.@1").inAll
 )
 ThisBuild / assemblyPackageScala / assembleArtifact := false,
