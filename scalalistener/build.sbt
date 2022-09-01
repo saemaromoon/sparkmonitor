@@ -17,13 +17,14 @@ libraryDependencies ++= {
       "log4j" % "log4j" % "1.2.17" % "provided",
       "org.json4s" % "json4s-ast_2.11" % "3.7.0-M5",
       ("org.json4s" % "json4s-jackson_2.11" % "3.7.0-M5").exclude("com.fasterxml.jackson.core" , "jackson-databind"),
+      "org.java-websocket" % "Java-WebSocket" % "1.5.1" 
     )
     case Some((2, 12)) => List(
       "org.apache.spark" %% "spark-core" % sparkVersion3 % "provided" ,
       "net.sf.py4j" % "py4j" % "0.10.7" % "provided",
       "log4j" % "log4j" % "1.2.17" % "provided",
       "org.json4s" % "json4s-ast_2.12" % "3.7.0-M5",
-      "org.json4s" % "json4s-jackson_2.12" % "3.7.0-M5",
+      ("org.json4s" % "json4s-jackson_2.12" % "3.7.0-M5").exclude("com.fasterxml.jackson.core" , "jackson-databind"),
       "org.java-websocket" % "Java-WebSocket" % "1.5.1" 
     )
   }
@@ -35,8 +36,7 @@ ThisBuild / assemblyShadeRules := {
       ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll
     )
     case Some((2, 12)) => List(
-      ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll,
-      ShadeRule.rename("org.java-websocket.**" -> "ch.cern.swan.org.java-websocket.@1").inAll
+      ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll
     )
   }
 }
@@ -56,7 +56,6 @@ assembly / assemblyOutputPath := {
 }
 
 ThisBuild / assemblyShadeRules := Seq(
-  ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll,
-  ShadeRule.rename("org.java-websocket.**" -> "ch.cern.swan.org.java-websocket.@1").inAll
+  ShadeRule.rename("org.json4s.**" -> "ch.cern.swan.org.json4s.@1").inAll
 )
 ThisBuild / assemblyPackageScala / assembleArtifact := false,

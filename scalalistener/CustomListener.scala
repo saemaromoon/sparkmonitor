@@ -47,20 +47,25 @@ class JupyterSparkMonitorListener(conf: SparkConf) extends SparkListener {
   var socket: Socket = null
   var onStageStatusActiveTask: TimerTask = null
   val sparkTasksQueue: BlockingQueue[String] = new LinkedBlockingQueue[String]()
-//   var out: OutputStreamWriter = null
+    
   val sparkStageActiveTasksMaxMessages: Integer = 250
   val sparkStageActiveRate: Long = 1000L // 1s
+  var ready = false
 
   logger.info("Starting Connection")
   startConnection()
-  ConnectToWebSocket() 
+  connectToWebSocket() 
 
   /** Send a string message to the kernel using the socket. */
   def send(msg: String): Unit = {
     try {
-        mWebSocketClient.send(msg + ";EOD:");
-//       out.write(msg + ";EOD:")
-//       out.flush()
+        while(!ready) {
+            // wait connection ready
+            Thread.sleep(1000L)
+            logger.info("waiting... ") 
+        }
+        logger.info("sending message")
+        mWebSocketClient.send(msg + ";EOD:"); 
         
     } catch {
       case exception: Throwable => logger.error("Exception sending socket message: ", exception)
@@ -97,29 +102,32 @@ class JupyterSparkMonitorListener(conf: SparkConf) extends SparkListener {
     onStageStatusActiveTask.cancel()
   }
   // websocket connection added - 220831
-  def ConnectToWebSocket() : Unit = {
-    println("Connecting to server");
+  def connectToWebSocket() : Unit = {
+    logger.info("Connecting to server");
     var uri: URI = new URI("ws://"+host+":"+port.toInt); 
+    logger.info(uri)
 
     mWebSocketClient = new WebSocketClient(uri) {
         @Override
         def onOpen(serverHandshake: ServerHandshake) {
-             println("Websocket", "Opened"); 
+             logger.info("Websocket - Opened"); 
+             ready = true 
+             Thread.sleep(2000L)
         }
 
         @Override
         def onMessage(s: String) {
-            println("onMessage", s);
+            logger.info("onMessage " + s);
         }
 
         @Override
         def onClose(i:Int, s:String, b:Boolean) {
-            println("Websocket", "Closed " + s);
+            logger.info("Websocket - Closed " + s);
         }
 
         @Override
         def onError(e:Exception) {
-            println("Websocket", "Error " + e.getMessage());
+            logger.error("Websocket", e);
         }
     };
     mWebSocketClient.connect();

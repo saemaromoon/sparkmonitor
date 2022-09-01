@@ -86,17 +86,18 @@ class SocketThread(Thread):
     """Class to manage a socket in a background thread
     to talk to the scala listener.""" 
     
-    async def handler(self, websocket, path):    
+    async def handler(self, websocket, path):  
+        logger.info('Entered handler')  
         data = await websocket.recv() 
         reply = f"Data recieved as:  {data}!" 
-        print(reply)
+        logger.info(reply)
         if not data:
             logger.info('Scala socket closed - empty data')
             logger.info('Socket Exiting Client Loop')
             try:
-                asyncio.get_event_loop().stop()
+                self.event_loop..stop()
             except OSError:
-                asyncio.get_event_loop().close()
+                self.event_loop.close()
         pieces = data.split(';EOD:')
         data = pieces[-1]
         messages = pieces[:-1]
@@ -117,9 +118,10 @@ class SocketThread(Thread):
 #         self.sock.bind(('localhost', self.port))
 #         self.sock.listen(5)
 #         self.port = self.sock.getsockname()[1]
-#         logger.info('Socket Listening on port %s', str(self.port))
+        logger.info('Socket Listening on port %s', str(self.port))
 #         self.start() 
         self.start_server = websockets.serve(self.handler, "0.0.0.0", self.port)
+        logger.info('server %s', str(self.start_server))
         self.start() 
 
         return self.port
@@ -130,8 +132,8 @@ class SocketThread(Thread):
         Creates a socket and waits(blocking) for connections
         When a connection is closed, goes back into waiting.
         """ 
-        asyncio.get_event_loop().run_until_complete(self.start_server) 
-        asyncio.get_event_loop().run_forever() 
+        self.event_loop.run_until_complete(self.start_server) 
+        self.event_loop.run_forever() 
 #         while(True):
 #             logger.info('Starting socket thread, going to accept')
 #             (client, addr) = self.sock.accept()
