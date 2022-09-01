@@ -95,7 +95,7 @@ class SocketThread(Thread):
             logger.info('Scala socket closed - empty data')
             logger.info('Socket Exiting Client Loop')
             try:
-                self.event_loop..stop()
+                self.event_loop.stop()
             except OSError:
                 self.event_loop.close()
         pieces = data.split(';EOD:')
