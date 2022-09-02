@@ -44,9 +44,11 @@ class ScalaMonitor:
         ipython is the instance of ZMQInteractiveShell
         """
         self.ipython = ipython
+        self.comm = None
 
     def start(self):
         """Creates the socket thread and returns assigned port"""
+        logger.info('ScalaMonitor start.')
         self.scalaSocket = SocketThread(asyncio.get_event_loop())
         return self.scalaSocket.startSocket()  # returns the port
 
@@ -56,7 +58,10 @@ class ScalaMonitor:
 
     def send(self, msg):
         """Send a message to the frontend"""
-        self.comm.send(msg)
+        if self.comm:
+            self.comm.send(msg)
+        else: 
+            logger.info('comm empty not sending')
 
     def handle_comm_message(self, msg):
         """Handle message received from frontend
@@ -68,6 +73,9 @@ class ScalaMonitor:
     def register_comm(self):
         """Register a comm_target which will be used by
         frontend to start communication."""
+        logger.info('register_comm.')
+        print('register_comm.')
+        logger.info('register_comm.')
         self.ipython.kernel.comm_manager.register_target(
             'SparkMonitor', self.target_func)
 
@@ -87,26 +95,28 @@ class SocketThread(Thread):
     to talk to the scala listener.""" 
     
     async def handler(self, websocket, path):  
-        logger.info('Entered handler')  
-        data = await websocket.recv() 
-        reply = f"Data recieved as:  {data}!" 
-        logger.info(reply)
-        if not data:
-            logger.info('Scala socket closed - empty data')
-            logger.info('Socket Exiting Client Loop')
-            try:
-                self.event_loop.stop()
-            except OSError:
-                self.event_loop.close()
-        pieces = data.split(';EOD:')
-        data = pieces[-1]
-        messages = pieces[:-1]
-        for msg in messages:
-            logger.debug('Message Received: \n%s\n', msg)
-            self.onrecv(msg)     
+        while(True):
+            logger.info('Entered handler')  
+            data = await websocket.recv() 
+            reply = f"Data recieved as:  {data}!" 
+            logger.info(reply)
+            if not data:
+                logger.info('Scala socket closed - empty data')
+                logger.info('Socket Exiting Client Loop')
+                try:
+                    self.event_loop.stop()
+                except OSError:
+                    self.event_loop.close()
+            pieces = data.split(';EOD:')
+            data = pieces[-1]
+            messages = pieces[:-1]
+            for msg in messages:
+                logger.debug('Message Received: \n%s\n', msg)
+                self.onrecv(msg)     
 
     def __init__(self, event_loop):
         """Constructor, initializes base class Thread."""
+        logger.info('SocketThread __init__.')
         self.port = 25003
         self.event_loop = event_loop
         Thread.__init__(self)
@@ -133,7 +143,7 @@ class SocketThread(Thread):
         When a connection is closed, goes back into waiting.
         """ 
         self.event_loop.run_until_complete(self.start_server) 
-        self.event_loop.run_forever() 
+        # self.event_loop.run_forever() 
 #         while(True):
 #             logger.info('Starting socket thread, going to accept')
 #             (client, addr) = self.sock.accept()
@@ -187,15 +197,19 @@ def load_ipython_extension(ipython):
     logger.setLevel(logging.INFO)
     logger.propagate = True
 
+    
     if ipykernel_imported:
+        logger.info('ipykernel_imported: True')
         if not isinstance(ipython, zmqshell.ZMQInteractiveShell):
             logger.warn(
                 'SparkMonitor: Ipython not running through notebook')
             return
     else:
+        logger.info('ipykernel_imported: False')
         return
 
     ip = ipython
+    logger.info('ipython %s', str(ip))
     logger.info('Starting Kernel Extension')
     monitor = ScalaMonitor(ip)
     monitor.register_comm()  # Communication to browser
@@ -254,3 +268,6 @@ def get_spark_scala_version():
     cmd = "pyspark --version 2>&1 | grep -m 1  -Eo '[0-9]*[.][0-9]*[.][0-9]*[,]' | sed 's/,$//'"
     version = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
     return version.stdout.strip()
+
+
+
