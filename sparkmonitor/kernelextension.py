@@ -96,10 +96,10 @@ class SocketThread(Thread):
     
     async def handler(self, websocket, path):  
         while(True):
-            logger.info('Entered handler')  
+            # logger.debug('Entered handler')  
             data = await websocket.recv() 
             reply = f"Data recieved as:  {data}!" 
-            logger.info(reply)
+            logger.debug(reply)
             if not data:
                 logger.info('Scala socket closed - empty data')
                 logger.info('Socket Exiting Client Loop')
