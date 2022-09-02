@@ -67,6 +67,7 @@
         "webpack-cli": "^3.3.10"
     },
     "scripts": {
+        "build:zb": "jlpm run build:lib && jlpm run build:labextension:dev && jlpm run build:nbextension",
         "build:prod": "jlpm run build:lib && jlpm run build:labextension && jlpm run build:nbextension && jlpm run build:scalalistener",
         "build": "jlpm run build:lib && jlpm run build:labextension",
         "build:lib": "tsc -p tsconfig.lab.json",

@@ -7,8 +7,8 @@ lab_path = HERE / "sparkmonitor" / "labextension"
 ensured_targets = [
     str(lab_path / "package.json"), 
     str(HERE / "sparkmonitor" / "static/extension.js"),
-    str(HERE / "sparkmonitor" / "listener_2.11.jar"),
-    str(HERE / "sparkmonitor" / "listener_2.12.jar")
+    # str(HERE / "sparkmonitor" / "listener_2.11.jar"),
+    # str(HERE / "sparkmonitor" / "listener_2.12.jar")
     ]
 data_file_spec = [
     (f"share/jupyter/labextensions/sparkmonitor", str(lab_path), "**"),
@@ -19,9 +19,9 @@ pkg_json = json.loads((HERE / "package.json").read_bytes())
 
 
 from jupyter_packaging import wrap_installers, npm_builder, get_data_files
-builder = npm_builder(build_cmd="build:prod", build_dir=lab_path, source_dir="src")
+builder = npm_builder(build_cmd="build:zb", build_dir=lab_path, source_dir="src")
 cmdclass = wrap_installers(pre_dist=builder, ensured_targets=ensured_targets)
-data_files=get_data_files(data_file_spec)
+data_files=get_data_files(data_file_spec) 
 
 setup(
     name=pkg_json["name"],
