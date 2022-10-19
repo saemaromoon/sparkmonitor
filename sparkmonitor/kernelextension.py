@@ -97,7 +97,15 @@ class SocketThread(Thread):
     async def handler(self, websocket, path):  
         while(True):
             # logger.debug('Entered handler')  
-            data = await websocket.recv() 
+            try:
+                data = await websocket.recv() 
+            except Exception as err: 
+                logger.error('Connection closed...\n%s' % (err))
+                try:
+                    self.event_loop.stop()
+                except OSError:
+                    self.event_loop.close()    
+                break;
             reply = f"Data recieved as:  {data}!" 
             logger.debug(reply)
             if not data:
