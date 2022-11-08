@@ -74,8 +74,6 @@ class ScalaMonitor:
         """Register a comm_target which will be used by
         frontend to start communication."""
         logger.info('register_comm.')
-        print('register_comm.')
-        logger.info('register_comm.')
         self.ipython.kernel.comm_manager.register_target(
             'SparkMonitor', self.target_func)
 
@@ -96,7 +94,7 @@ class SocketThread(Thread):
     
     async def handler(self, websocket, path):  
         while(True):
-            # logger.debug('Entered handler')  
+            #logger.info('Entered handler')  
             try:
                 data = await websocket.recv() 
             except Exception as err: 
@@ -107,7 +105,7 @@ class SocketThread(Thread):
                     self.event_loop.close()    
                 break;
             reply = f"Data recieved as:  {data}!" 
-            logger.debug(reply)
+            #logger.info(reply)
             if not data:
                 logger.info('Scala socket closed - empty data')
                 logger.info('Socket Exiting Client Loop')
@@ -119,7 +117,13 @@ class SocketThread(Thread):
             data = pieces[-1]
             messages = pieces[:-1]
             for msg in messages:
-                logger.debug('Message Received: \n%s\n', msg)
+                import json
+                json_object = json.loads(msg)
+                if(json_object['msgtype'] == 'sparkApplicationStart'):
+                    logger.info('sparkApplicationStart - %s', json_object['appName'])
+                elif(json_object['msgtype'] == 'sparkExecutorAdded'):
+                    logger.info('sparkExecutorAdded - excutor #.%s ready', json_object['executorId'])
+                #logger.info('Message Received: \n%s\n', msg)
                 self.onrecv(msg)     
 
     def __init__(self, event_loop):
