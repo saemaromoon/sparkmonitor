@@ -111,8 +111,8 @@ class JupyterSparkMonitorListener(conf: SparkConf) extends SparkListener {
         @Override
         def onOpen(serverHandshake: ServerHandshake) {
              logger.info("Websocket - Opened"); 
-             ready = true 
              Thread.sleep(2000L)
+             ready = true 
         }
 
         @Override
@@ -122,12 +122,18 @@ class JupyterSparkMonitorListener(conf: SparkConf) extends SparkListener {
 
         @Override
         def onClose(i:Int, s:String, b:Boolean) {
-            logger.info("Websocket - Closed " + s);
+            logger.info("Websocket - Closed " + s); 
+            ready = false; 
+            Thread.sleep(1000L)
+            connectToWebSocket();
         }
 
         @Override
         def onError(e:Exception) {
             logger.error("Websocket", e);
+            ready = false;
+            mWebSocketClient.close();
+            
         }
     };
     mWebSocketClient.connect();
