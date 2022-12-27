@@ -95,18 +95,18 @@ class SocketThread(Thread):
     
     async def handler(self, websocket, path):  
         while(True):
-            logger.info('Entered handler')  
+            # logger.info('Entered handler')  
             try:
                 data = await websocket.recv() 
             except Exception as err: 
                 logger.error('Connection closed...\n%s' % (err)) 
-                break;
+                break
             reply = f"Data recieved as:  {data}!" 
             #logger.info(reply)
             if not data:
                 logger.info('Scala socket closed - empty data')
                 logger.info('Socket Exiting Client Loop')  
-                break;
+                break
             pieces = data.split(';EOD:')
             data = pieces[-1]
             messages = pieces[:-1]
@@ -154,10 +154,12 @@ class SocketThread(Thread):
         Creates a socket and waits(blocking) for connections
         When a connection is closed, goes back into waiting.
         """ 
-        self.event_loop.run_until_complete(self.start_server)  
-        # self.event_loop.run_forever()
-        # self.event_loop.close()
-        
+        try:
+            self.event_loop.run_until_complete(self.start_server)  
+            # self.event_loop.run_forever()
+            # self.event_loop.close()
+        except Exception as err: 
+            logger.error('Background websocket closed...\n%s' % (err))   
 #         while(True):
 #             logger.info('Starting socket thread, going to accept')
 #             (client, addr) = self.sock.accept()
@@ -224,7 +226,7 @@ def load_ipython_extension(ipython):
 
     ip = ipython
     logger.info('ipython %s', str(ip))
-    logger.info('Starting Kernel Extension!')
+    logger.info('Starting Kernel Extension!!')
     monitor = ScalaMonitor(ip)
     monitor.register_comm()  # Communication to browser
     monitor.start()
