@@ -49,7 +49,8 @@ class ScalaMonitor:
     def start(self):
         """Creates the socket thread and returns assigned port"""
         logger.info('ScalaMonitor start.')
-        self.scalaSocket = SocketThread(asyncio.get_event_loop())
+        # self.scalaSocket = SocketThread(asyncio.get_event_loop())
+        self.scalaSocket = SocketThread()
         return self.scalaSocket.startSocket()  # returns the port
 
     def getPort(self):
@@ -98,21 +99,14 @@ class SocketThread(Thread):
             try:
                 data = await websocket.recv() 
             except Exception as err: 
-                logger.error('Connection closed...\n%s' % (err))
-                try:
-                    self.event_loop.stop()
-                except OSError:
-                    self.event_loop.close()    
+                logger.error('Connection closed...\n%s' % (err)) 
                 break;
             reply = f"Data recieved as:  {data}!" 
             #logger.info(reply)
             if not data:
                 logger.info('Scala socket closed - empty data')
-                logger.info('Socket Exiting Client Loop')
-                try:
-                    self.event_loop.stop()
-                except OSError:
-                    self.event_loop.close()
+                logger.info('Socket Exiting Client Loop')  
+                break;
             pieces = data.split(';EOD:')
             data = pieces[-1]
             messages = pieces[:-1]
@@ -126,10 +120,16 @@ class SocketThread(Thread):
                 #logger.info('Message Received: \n%s\n', msg)
                 self.onrecv(msg)     
 
-    def __init__(self, event_loop):
+    # def __init__(self, event_loop):
+    def __init__(self):
         """Constructor, initializes base class Thread."""
         logger.info('SocketThread __init__.')
         self.port = 25003
+        # self.event_loop = event_loop
+        # Thread.__init__(self)
+        
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
         self.event_loop = event_loop
         Thread.__init__(self)
 
@@ -156,6 +156,9 @@ class SocketThread(Thread):
         """ 
         self.event_loop.run_until_complete(self.start_server) 
         # self.event_loop.run_forever() 
+        self.event_loop.run_forever()
+        self.event_loop.close()
+        
 #         while(True):
 #             logger.info('Starting socket thread, going to accept')
 #             (client, addr) = self.sock.accept()
