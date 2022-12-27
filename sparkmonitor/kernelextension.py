@@ -49,8 +49,8 @@ class ScalaMonitor:
     def start(self):
         """Creates the socket thread and returns assigned port"""
         logger.info('ScalaMonitor start.')
-        # self.scalaSocket = SocketThread(asyncio.get_event_loop())
-        self.scalaSocket = SocketThread()
+        self.scalaSocket = SocketThread(asyncio.get_event_loop())
+        # self.scalaSocket = SocketThread()
         return self.scalaSocket.startSocket()  # returns the port
 
     def getPort(self):
@@ -95,7 +95,7 @@ class SocketThread(Thread):
     
     async def handler(self, websocket, path):  
         while(True):
-            #logger.info('Entered handler')  
+            logger.info('Entered handler')  
             try:
                 data = await websocket.recv() 
             except Exception as err: 
@@ -120,18 +120,18 @@ class SocketThread(Thread):
                 #logger.info('Message Received: \n%s\n', msg)
                 self.onrecv(msg)     
 
-    # def __init__(self, event_loop):
-    def __init__(self):
+    def __init__(self, event_loop):
+    # def __init__(self):
         """Constructor, initializes base class Thread."""
         logger.info('SocketThread __init__.')
         self.port = 25003
-        # self.event_loop = event_loop
-        # Thread.__init__(self)
-        
-        event_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(event_loop)
         self.event_loop = event_loop
         Thread.__init__(self)
+        
+        # event_loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(event_loop)
+        # self.event_loop = event_loop
+        # Thread.__init__(self)
 
     def startSocket(self):
         """Starts a socket on a random port and starts
@@ -154,10 +154,9 @@ class SocketThread(Thread):
         Creates a socket and waits(blocking) for connections
         When a connection is closed, goes back into waiting.
         """ 
-        self.event_loop.run_until_complete(self.start_server) 
-        # self.event_loop.run_forever() 
-        self.event_loop.run_forever()
-        self.event_loop.close()
+        self.event_loop.run_until_complete(self.start_server)  
+        # self.event_loop.run_forever()
+        # self.event_loop.close()
         
 #         while(True):
 #             logger.info('Starting socket thread, going to accept')
@@ -225,7 +224,7 @@ def load_ipython_extension(ipython):
 
     ip = ipython
     logger.info('ipython %s', str(ip))
-    logger.info('Starting Kernel Extension')
+    logger.info('Starting Kernel Extension!')
     monitor = ScalaMonitor(ip)
     monitor.register_comm()  # Communication to browser
     monitor.start()
